@@ -17,28 +17,36 @@ var (
 	emptyBytes = NewBytes(make([]byte, 0), false)
 )
 
-func TestBytesSlice_Join(t *testing.T) {
-	empty := BytesSlice(nil)
-	assertBytes(empty.Join(BytesFromString(",")), nilBytes, t)
-	assertBytes(empty.Join(BytesFromString(",")), emptyBytes, t)
-
-	single := BytesSlice{BytesFromString("1")}
-	assertBytes(single.Join(BytesFromString(",")), BytesFromString("1"), t)
-
-	list := BytesSlice{BytesFromString("1"), BytesFromString("2"), BytesFromString("3")}
-	assertBytes(list.Join(BytesFromString(",")), BytesFromString("1,2,3"), t)
+func Test_JoinBytes(t *testing.T) {
+	assertBytes(JoinBytes(BytesFromString(",")), nilBytes, t)
+	assertBytes(JoinBytes(BytesFromString(","), emptyBytes), nilBytes, t)
+	assertBytes(JoinBytes(BytesFromString(","), BytesFromString("1")), BytesFromString("1"), t)
+	assertBytes(
+		JoinBytes(
+			BytesFromString(","),
+			BytesFromString("1"),
+			BytesFromString("2"),
+			BytesFromString("3"),
+		),
+		BytesFromString("1,2,3"),
+		t,
+	)
 }
 
-func TestBytesSlice_JoinR(t *testing.T) {
-	empty := BytesSlice(nil)
-	assertBytes(empty.JoinR([]byte(",")), nilBytes, t)
-	assertBytes(empty.JoinR([]byte(",")), emptyBytes, t)
-
-	single := BytesSlice{BytesFromString("1")}
-	assertBytes(single.JoinR([]byte(",")), BytesFromString("1"), t)
-
-	list := BytesSlice{BytesFromString("1"), BytesFromString("2"), BytesFromString("3")}
-	assertBytes(list.JoinR([]byte(",")), BytesFromString("1,2,3"), t)
+func Test_JoinBytesR(t *testing.T) {
+	assertBytes(JoinBytesR([]byte(",")), nilBytes, t)
+	assertBytes(JoinBytesR([]byte(","), emptyBytes), nilBytes, t)
+	assertBytes(JoinBytesR([]byte(","), BytesFromString("1")), BytesFromString("1"), t)
+	assertBytes(
+		JoinBytesR(
+			[]byte(","),
+			BytesFromString("1"),
+			BytesFromString("2"),
+			BytesFromString("3"),
+		),
+		BytesFromString("1,2,3"),
+		t,
+	)
 }
 
 func TestBytes_Append(t *testing.T) {

@@ -167,53 +167,53 @@ func (t Bytes) LastIndexByte(c byte) int {
 }
 
 // Split is equivalent to bytes.Split
-func (t Bytes) Split(sep Bytes) BytesSlice {
-	return NewBytesSlice(bytes.Split(t.p, sep.p), false)
+func (t Bytes) Split(sep Bytes) []Bytes {
+	return bytesSlice(bytes.Split(t.p, sep.p))
 }
 
 // SplitR is equivalent to bytes.Split
-func (t Bytes) SplitR(sep []byte) BytesSlice {
-	return NewBytesSlice(bytes.Split(t.p, sep), false)
+func (t Bytes) SplitR(sep []byte) []Bytes {
+	return bytesSlice(bytes.Split(t.p, sep))
 }
 
 // SplitN is equivalent to bytes.SplitN
-func (t Bytes) SplitN(sep Bytes, n int) BytesSlice {
-	return NewBytesSlice(bytes.SplitN(t.p, sep.p, n), false)
+func (t Bytes) SplitN(sep Bytes, n int) []Bytes {
+	return bytesSlice(bytes.SplitN(t.p, sep.p, n))
 }
 
 // SplitNR is equivalent to bytes.SplitN
-func (t Bytes) SplitNR(sep []byte, n int) BytesSlice {
-	return NewBytesSlice(bytes.SplitN(t.p, sep, n), false)
+func (t Bytes) SplitNR(sep []byte, n int) []Bytes {
+	return bytesSlice(bytes.SplitN(t.p, sep, n))
 }
 
 // SplitAfter is equivalent to bytes.SplitAfter
-func (t Bytes) SplitAfter(sep Bytes) BytesSlice {
-	return NewBytesSlice(bytes.SplitAfter(t.p, sep.p), false)
+func (t Bytes) SplitAfter(sep Bytes) []Bytes {
+	return bytesSlice(bytes.SplitAfter(t.p, sep.p))
 }
 
 // SplitAfterR is equivalent to bytes.SplitAfter
-func (t Bytes) SplitAfterR(sep []byte) BytesSlice {
-	return NewBytesSlice(bytes.SplitAfter(t.p, sep), false)
+func (t Bytes) SplitAfterR(sep []byte) []Bytes {
+	return bytesSlice(bytes.SplitAfter(t.p, sep))
 }
 
 // SplitAfterN is equivalent to bytes.SplitAfterN
-func (t Bytes) SplitAfterN(sep Bytes, n int) BytesSlice {
-	return NewBytesSlice(bytes.SplitAfterN(t.p, sep.p, n), false)
+func (t Bytes) SplitAfterN(sep Bytes, n int) []Bytes {
+	return bytesSlice(bytes.SplitAfterN(t.p, sep.p, n))
 }
 
 // SplitAfterNR is equivalent to bytes.SplitAfterN
-func (t Bytes) SplitAfterNR(sep []byte, n int) BytesSlice {
-	return NewBytesSlice(bytes.SplitAfterN(t.p, sep, n), false)
+func (t Bytes) SplitAfterNR(sep []byte, n int) []Bytes {
+	return bytesSlice(bytes.SplitAfterN(t.p, sep, n))
 }
 
 // Fields is equivalent to bytes.Fields
-func (t Bytes) Fields() BytesSlice {
-	return NewBytesSlice(bytes.Fields(t.p), false)
+func (t Bytes) Fields() []Bytes {
+	return bytesSlice(bytes.Fields(t.p))
 }
 
 // FieldsFunc is equivalent to bytes.FieldsFunc
-func (t Bytes) FieldsFunc(f func(rune) bool) BytesSlice {
-	return NewBytesSlice(bytes.FieldsFunc(t.p, f), false)
+func (t Bytes) FieldsFunc(f func(rune) bool) []Bytes {
+	return bytesSlice(bytes.FieldsFunc(t.p, f))
 }
 
 // HasPrefix is equivalent to bytes.HasPrefix
@@ -398,36 +398,34 @@ func (t *Bytes) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-type BytesSlice []Bytes
-
-func NewBytesSlice(p [][]byte, copy bool) BytesSlice {
-	res := make(BytesSlice, len(p))
+func bytesSlice(p [][]byte) []Bytes {
+	res := make([]Bytes, len(p))
 	for idx, i := range p {
-		res[idx] = NewBytes(i, copy)
+		res[idx] = NewBytes(i, false)
 	}
 	return res
 }
 
-func (t BytesSlice) Join(sep Bytes) Bytes {
-	return t.JoinR(sep.p)
+func JoinBytes(sep Bytes, parts ...Bytes) Bytes {
+	return JoinBytesR(sep.p, parts...)
 }
 
-func (t BytesSlice) JoinR(sep []byte) Bytes {
-	if len(t) == 0 {
+func JoinBytesR(sep []byte, parts ...Bytes) Bytes {
+	if len(parts) == 0 {
 		return NewBytes(nil, false)
 	}
-	if len(t) == 1 {
-		return t[0]
+	if len(parts) == 1 {
+		return parts[0]
 	}
 
-	n := len(sep) * (len(t) - 1)
-	for _, v := range t {
+	n := len(sep) * (len(parts) - 1)
+	for _, v := range parts {
 		n += len(v.p)
 	}
 
 	b := make([]byte, n)
-	bp := copy(b, t[0].p)
-	for _, v := range t[1:] {
+	bp := copy(b, parts[0].p)
+	for _, v := range parts[1:] {
 		bp += copy(b[bp:], sep)
 		bp += copy(b[bp:], v.p)
 	}
