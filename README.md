@@ -3,6 +3,9 @@ Immutable
 
 The package provides immutable data types.
 
-For now, this is only a slice of bytes. 
+Types:
+
+- Bytes (`[]byte`)
+- StringMap (`map[string]string`)
 
 <!-- TODO: describe types -->
