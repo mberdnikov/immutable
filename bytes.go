@@ -400,16 +400,20 @@ func (t *Bytes) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+type bytesDTO struct {
+	Data []byte `bson:"data"`
+}
+
 func (t Bytes) MarshalBSON() ([]byte, error) {
-	return bson.Marshal(t.p)
+	return bson.Marshal(bytesDTO{Data: t.p})
 }
 
 func (t *Bytes) UnmarshalBSON(data []byte) error {
-	var p []byte
+	var p bytesDTO
 	if err := bson.Unmarshal(data, &p); err != nil {
 		return err
 	}
-	*t = Bytes{p}
+	*t = Bytes{p.Data}
 	return nil
 }
 

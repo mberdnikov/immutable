@@ -145,15 +145,19 @@ func (t *StringMap) UnmarshalBinary(data []byte) error {
 	return t.UnmarshalBSON(data)
 }
 
+type stringMapDTO struct {
+	Data map[string]string `bson:"data"`
+}
+
 func (t StringMap) MarshalBSON() ([]byte, error) {
-	return bson.Marshal(t.m)
+	return bson.Marshal(stringMapDTO{Data: t.m})
 }
 
 func (t *StringMap) UnmarshalBSON(data []byte) error {
-	var m map[string]string
-	if err := bson.Unmarshal(data, &m); err != nil {
+	var p stringMapDTO
+	if err := bson.Unmarshal(data, &p); err != nil {
 		return err
 	}
-	*t = StringMap{m}
+	*t = StringMap{p.Data}
 	return nil
 }

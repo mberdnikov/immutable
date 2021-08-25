@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func assertBytes(got, want Bytes, t *testing.T) {
@@ -397,6 +398,19 @@ func TestBytes_UnmarshalBinary(t *testing.T) {
 
 func TestBytes_UnmarshalText(t *testing.T) {
 	// todo
+}
+
+func TestBytes_MarshalBSON(t *testing.T) {
+	encoded, err := bson.Marshal(BytesFromString("1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(encoded)
+	var decoded Bytes
+	if err = bson.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, BytesFromString("1"), decoded)
 }
 
 func TestNewBytes(t *testing.T) {
