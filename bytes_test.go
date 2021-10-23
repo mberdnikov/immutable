@@ -245,7 +245,25 @@ func TestBytes_MarshalBinary(t *testing.T) {
 }
 
 func TestBytes_MarshalText(t *testing.T) {
-	// todo
+	cases := [][]byte{
+		nil,
+		make([]byte, 0, 1),
+		[]byte("message"),
+	}
+	for idx, c := range cases {
+		t.Run(strconv.Itoa(idx), func(t *testing.T) {
+			b1 := NewBytes(c, false)
+			data, err := b1.MarshalText()
+			if err != nil {
+				t.Fatal(err)
+			}
+			b2 := Bytes{}
+			if err := b2.UnmarshalText(data); err != nil {
+				t.Fatal(err)
+			}
+			assertBytesEqual(t, b1, b2)
+		})
+	}
 }
 
 func TestBytes_Reader(t *testing.T) {

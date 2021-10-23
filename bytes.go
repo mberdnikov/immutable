@@ -377,6 +377,12 @@ func (t Bytes) MarshalText() (text []byte, err error) {
 	buf := bytes.Buffer{}
 	enc := base64.NewEncoder(base64.RawStdEncoding, &buf)
 	_, err = enc.Write(t.p)
+	if err != nil {
+		return nil, err
+	}
+	if err = enc.Close(); err != nil {
+		return nil, err
+	}
 	return buf.Bytes(), err
 }
 
