@@ -2,8 +2,6 @@ package immutable
 
 import (
 	"encoding/json"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type StringMap struct {
@@ -107,6 +105,22 @@ func (t StringMap) Without(key string) StringMap {
 	return StringMap{cp}
 }
 
+func (t StringMap) IsEqual(sm StringMap) bool {
+	if len(t.m) != len(sm.m) {
+		return false
+	}
+	for key, value1 := range t.m {
+		value2, has := sm.m[key]
+		if !has {
+			return false
+		}
+		if value1 != value2 {
+			return false
+		}
+	}
+	return true
+}
+
 func (t StringMap) merge(sm map[string]string) StringMap {
 	count := len(t.m)
 	for key := range sm {
@@ -124,11 +138,11 @@ func (t StringMap) merge(sm map[string]string) StringMap {
 	return StringMap{result}
 }
 
-func (t StringMap) MarshalText() ([]byte, error) {
+func (t StringMap) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.m)
 }
 
-func (t *StringMap) UnmarshalText(bytes []byte) error {
+func (t *StringMap) UnmarshalJSON(bytes []byte) error {
 	var m map[string]string
 	if err := json.Unmarshal(bytes, &m); err != nil {
 		return err
@@ -137,27 +151,64 @@ func (t *StringMap) UnmarshalText(bytes []byte) error {
 	return nil
 }
 
+func (t StringMap) MarshalText() ([]byte, error) {
+	return t.MarshalJSON()
+}
+
+func (t *StringMap) UnmarshalText(bytes []byte) error {
+	return t.UnmarshalJSON(bytes)
+}
+
 func (t StringMap) MarshalBinary() (data []byte, err error) {
-	return t.MarshalBSON()
+	size := 0
+	size += varintSize(uint64(len(t.m)))
+	for k, v := range t.m {
+		size += varintSize(uint64(len(k))) + len(k)
+		size += varintSize(uint64(len(v))) + len(v)
+	}
+
+	data = make([]byte, size)
+	off := 0
+	writeInt := func(i int) {
+		n := putVarint(data[off:], uint64(i))
+		off += n
+	}
+	writeStr := func(s string) {
+		off += copy(data[off:], s)
+	}
+
+	writeInt(len(t.m))
+	for k, v := range t.m {
+		writeInt(len(k))
+		writeStr(k)
+		writeInt(len(v))
+		writeStr(v)
+	}
+	return data, nil
 }
 
 func (t *StringMap) UnmarshalBinary(data []byte) error {
-	return t.UnmarshalBSON(data)
-}
-
-type stringMapDTO struct {
-	Data map[string]string `bson:"data"`
-}
-
-func (t StringMap) MarshalBSON() ([]byte, error) {
-	return bson.Marshal(stringMapDTO{Data: t.m})
-}
-
-func (t *StringMap) UnmarshalBSON(data []byte) error {
-	var p stringMapDTO
-	if err := bson.Unmarshal(data, &p); err != nil {
-		return err
+	off := 0
+	readInt := func() int {
+		res, n := getVarint(data[off:])
+		off += n
+		return int(res)
 	}
-	*t = StringMap{p.Data}
+	readStr := func(l int) string {
+		res := string(data[off : off+l])
+		off += l
+		return res
+	}
+
+	l := readInt()
+	m := make(map[string]string, l)
+	for i := 0; i < l; i++ {
+		kl := readInt()
+		k := readStr(kl)
+		vl := readInt()
+		v := readStr(vl)
+		m[k] = v
+	}
+	*t = StringMap{m}
 	return nil
 }

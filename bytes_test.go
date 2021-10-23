@@ -1,15 +1,31 @@
 package immutable
 
 import (
+	"strconv"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-func assertBytes(got, want Bytes, t *testing.T) {
+func assertBytesEqual(t *testing.T, want, got Bytes) {
 	if !got.Equal(want) {
-		t.Errorf("got %s, want %s", got.p, want.p)
+		t.Errorf("assert bytes equal failed: got %s, want %s", got.p, want.p)
+	}
+}
+
+func assertIntEqual(t *testing.T, want, got int) {
+	if got != want {
+		t.Errorf("assert int equal failed: got %d, want %d", got, want)
+	}
+}
+
+func assertTrue(t *testing.T, got bool) {
+	if got != true {
+		t.Errorf("assert bool equal failed: got %v, want true", got)
+	}
+}
+
+func assertFalse(t *testing.T, got bool) {
+	if got != false {
+		t.Errorf("assert bool equal failed: got %v, want false", got)
 	}
 }
 
@@ -19,34 +35,34 @@ var (
 )
 
 func Test_JoinBytes(t *testing.T) {
-	assertBytes(JoinBytes(BytesFromString(",")), nilBytes, t)
-	assertBytes(JoinBytes(BytesFromString(","), emptyBytes), nilBytes, t)
-	assertBytes(JoinBytes(BytesFromString(","), BytesFromString("1")), BytesFromString("1"), t)
-	assertBytes(
+	assertBytesEqual(t, nilBytes, JoinBytes(BytesFromString(",")))
+	assertBytesEqual(t, nilBytes, JoinBytes(BytesFromString(","), emptyBytes))
+	assertBytesEqual(t, BytesFromString("1"), JoinBytes(BytesFromString(","), BytesFromString("1")))
+	assertBytesEqual(
+		t,
+		BytesFromString("1,2,3"),
 		JoinBytes(
 			BytesFromString(","),
 			BytesFromString("1"),
 			BytesFromString("2"),
 			BytesFromString("3"),
 		),
-		BytesFromString("1,2,3"),
-		t,
 	)
 }
 
 func Test_JoinBytesR(t *testing.T) {
-	assertBytes(JoinBytesR([]byte(",")), nilBytes, t)
-	assertBytes(JoinBytesR([]byte(","), emptyBytes), nilBytes, t)
-	assertBytes(JoinBytesR([]byte(","), BytesFromString("1")), BytesFromString("1"), t)
-	assertBytes(
+	assertBytesEqual(t, nilBytes, JoinBytesR([]byte(",")))
+	assertBytesEqual(t, nilBytes, JoinBytesR([]byte(","), emptyBytes))
+	assertBytesEqual(t, BytesFromString("1"), JoinBytesR([]byte(","), BytesFromString("1")))
+	assertBytesEqual(
+		t,
+		BytesFromString("1,2,3"),
 		JoinBytesR(
 			[]byte(","),
 			BytesFromString("1"),
 			BytesFromString("2"),
 			BytesFromString("3"),
 		),
-		BytesFromString("1,2,3"),
-		t,
 	)
 }
 
@@ -55,9 +71,9 @@ func TestBytes_Append(t *testing.T) {
 	b := NewBytes([]byte{'4', '5', '6'}, false)
 	c := NewBytes([]byte{'7', '8', '9'}, false)
 	d := a.Append(b, c)
-	assertBytes(d, BytesFromString("123456789"), t)
+	assertBytesEqual(t, BytesFromString("123456789"), d)
 	e := a.Append()
-	assertBytes(e, BytesFromString("123"), t)
+	assertBytesEqual(t, BytesFromString("123"), e)
 }
 
 func TestBytes_Compare(t *testing.T) {
@@ -68,9 +84,9 @@ func TestBytes_Compare(t *testing.T) {
 	b := NewBytes(br, false)
 	c := NewBytes(cr, false)
 
-	assert.Equal(t, 1, b.Compare(a))
-	assert.Equal(t, 0, b.Compare(b))
-	assert.Equal(t, -1, b.Compare(c))
+	assertIntEqual(t, 1, b.Compare(a))
+	assertIntEqual(t, 0, b.Compare(b))
+	assertIntEqual(t, -1, b.Compare(c))
 }
 
 func TestBytes_CompareR(t *testing.T) {
@@ -79,9 +95,9 @@ func TestBytes_CompareR(t *testing.T) {
 	cr := []byte{'7', '8', '9'}
 	b := NewBytes(br, false)
 
-	assert.Equal(t, 1, b.CompareR(ar))
-	assert.Equal(t, 0, b.CompareR(br))
-	assert.Equal(t, -1, b.CompareR(cr))
+	assertIntEqual(t, 1, b.CompareR(ar))
+	assertIntEqual(t, 0, b.CompareR(br))
+	assertIntEqual(t, -1, b.CompareR(cr))
 }
 
 func TestBytes_Contains(t *testing.T) {
@@ -90,10 +106,10 @@ func TestBytes_Contains(t *testing.T) {
 	a := NewBytes(ar, false)
 	b := NewBytes(br, false)
 
-	assert.True(t, a.Contains(a))
-	assert.True(t, a.Contains(nilBytes))
-	assert.False(t, a.Contains(b))
-	assert.False(t, nilBytes.Contains(b))
+	assertTrue(t, a.Contains(a))
+	assertTrue(t, a.Contains(nilBytes))
+	assertFalse(t, a.Contains(b))
+	assertFalse(t, nilBytes.Contains(b))
 }
 
 func TestBytes_ContainsAny(t *testing.T) {
@@ -105,10 +121,10 @@ func TestBytes_ContainsR(t *testing.T) {
 	br := []byte{'4', '5', '6'}
 	a := NewBytes(ar, false)
 
-	assert.True(t, a.ContainsR(ar))
-	assert.True(t, a.ContainsR(nil))
-	assert.False(t, a.ContainsR(br))
-	assert.False(t, nilBytes.ContainsR(br))
+	assertTrue(t, a.ContainsR(ar))
+	assertTrue(t, a.ContainsR(nil))
+	assertFalse(t, a.ContainsR(br))
+	assertFalse(t, nilBytes.ContainsR(br))
 }
 
 func TestBytes_ContainsRune(t *testing.T) {
@@ -117,51 +133,51 @@ func TestBytes_ContainsRune(t *testing.T) {
 
 func TestBytes_Copy(t *testing.T) {
 	shortBuf := make([]byte, 2)
-	assert.Equal(t, 2, BytesFromString("123").Copy(shortBuf))
+	assertIntEqual(t, 2, BytesFromString("123").Copy(shortBuf))
 	buf := make([]byte, 3)
-	assert.Equal(t, 3, BytesFromString("123").Copy(buf))
+	assertIntEqual(t, 3, BytesFromString("123").Copy(buf))
 	longBuf := make([]byte, 4)
-	assert.Equal(t, 3, BytesFromString("123").Copy(longBuf))
+	assertIntEqual(t, 3, BytesFromString("123").Copy(longBuf))
 }
 
 func TestBytes_Count(t *testing.T) {
-	assert.Equal(t, 0, nilBytes.Count(BytesFromString("0")))
-	assert.Equal(t, 0, BytesFromString("123").Count(BytesFromString("0")))
-	assert.Equal(t, 1, BytesFromString("123").Count(BytesFromString("1")))
-	assert.Equal(t, 2, BytesFromString("1231").Count(BytesFromString("1")))
-	assert.Equal(t, 4, BytesFromString("123").Count(nilBytes))
+	assertIntEqual(t, 0, nilBytes.Count(BytesFromString("0")))
+	assertIntEqual(t, 0, BytesFromString("123").Count(BytesFromString("0")))
+	assertIntEqual(t, 1, BytesFromString("123").Count(BytesFromString("1")))
+	assertIntEqual(t, 2, BytesFromString("1231").Count(BytesFromString("1")))
+	assertIntEqual(t, 4, BytesFromString("123").Count(nilBytes))
 }
 
 func TestBytes_CountR(t *testing.T) {
-	assert.Equal(t, 0, nilBytes.CountR([]byte{'0'}))
-	assert.Equal(t, 0, BytesFromString("123").CountR([]byte{'0'}))
-	assert.Equal(t, 1, BytesFromString("123").CountR([]byte{'1'}))
-	assert.Equal(t, 2, BytesFromString("1231").CountR([]byte{'1'}))
-	assert.Equal(t, 4, BytesFromString("123").CountR(nil))
+	assertIntEqual(t, 0, nilBytes.CountR([]byte{'0'}))
+	assertIntEqual(t, 0, BytesFromString("123").CountR([]byte{'0'}))
+	assertIntEqual(t, 1, BytesFromString("123").CountR([]byte{'1'}))
+	assertIntEqual(t, 2, BytesFromString("1231").CountR([]byte{'1'}))
+	assertIntEqual(t, 4, BytesFromString("123").CountR(nil))
 }
 
 func TestBytes_Equal(t *testing.T) {
-	assert.True(t, nilBytes.Equal(emptyBytes))
-	assert.True(t, BytesFromString("123").Equal(BytesFromString("123")))
-	assert.False(t, BytesFromString("123").Equal(BytesFromString("456")))
+	assertTrue(t, nilBytes.Equal(emptyBytes))
+	assertTrue(t, BytesFromString("123").Equal(BytesFromString("123")))
+	assertFalse(t, BytesFromString("123").Equal(BytesFromString("456")))
 }
 
 func TestBytes_EqualFold(t *testing.T) {
-	assert.True(t, nilBytes.EqualFold(emptyBytes))
-	assert.True(t, BytesFromString("abc").EqualFold(BytesFromString("ABC")))
-	assert.False(t, BytesFromString("123").EqualFold(BytesFromString("abc")))
+	assertTrue(t, nilBytes.EqualFold(emptyBytes))
+	assertTrue(t, BytesFromString("abc").EqualFold(BytesFromString("ABC")))
+	assertFalse(t, BytesFromString("123").EqualFold(BytesFromString("abc")))
 }
 
 func TestBytes_EqualFoldR(t *testing.T) {
-	assert.True(t, nilBytes.EqualFoldR(nil))
-	assert.True(t, BytesFromString("abc").EqualFoldR([]byte("ABC")))
-	assert.False(t, BytesFromString("123").EqualFoldR([]byte("abc")))
+	assertTrue(t, nilBytes.EqualFoldR(nil))
+	assertTrue(t, BytesFromString("abc").EqualFoldR([]byte("ABC")))
+	assertFalse(t, BytesFromString("123").EqualFoldR([]byte("abc")))
 }
 
 func TestBytes_EqualR(t *testing.T) {
-	assert.True(t, nilBytes.EqualR(nil))
-	assert.True(t, BytesFromString("123").EqualR([]byte("123")))
-	assert.False(t, BytesFromString("123").EqualR([]byte("456")))
+	assertTrue(t, nilBytes.EqualR(nil))
+	assertTrue(t, BytesFromString("123").EqualR([]byte("123")))
+	assertFalse(t, BytesFromString("123").EqualR([]byte("456")))
 }
 
 func TestBytes_Fields(t *testing.T) {
@@ -241,7 +257,25 @@ func TestBytes_Map(t *testing.T) {
 }
 
 func TestBytes_MarshalBinary(t *testing.T) {
-	// todo
+	cases := [][]byte{
+		nil,
+		make([]byte, 0, 1),
+		[]byte("message"),
+	}
+	for idx, c := range cases {
+		t.Run(strconv.Itoa(idx), func(t *testing.T) {
+			b1 := NewBytes(c, false)
+			data, err := b1.MarshalBinary()
+			if err != nil {
+				t.Fatal(err)
+			}
+			b2 := Bytes{}
+			if err := b2.UnmarshalBinary(data); err != nil {
+				t.Fatal(err)
+			}
+			assertBytesEqual(t, b1, b2)
+		})
+	}
 }
 
 func TestBytes_MarshalText(t *testing.T) {
@@ -408,27 +442,6 @@ func TestBytes_TrimSuffix(t *testing.T) {
 
 func TestBytes_TrimSuffixR(t *testing.T) {
 	// todo
-}
-
-func TestBytes_UnmarshalBinary(t *testing.T) {
-	// todo
-}
-
-func TestBytes_UnmarshalText(t *testing.T) {
-	// todo
-}
-
-func TestBytes_MarshalBSON(t *testing.T) {
-	encoded, err := bson.Marshal(BytesFromString("1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(encoded)
-	var decoded Bytes
-	if err = bson.Unmarshal(encoded, &decoded); err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, BytesFromString("1"), decoded)
 }
 
 func TestNewBytes(t *testing.T) {

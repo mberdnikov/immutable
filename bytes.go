@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"io"
 	"unicode"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Bytes struct {
@@ -403,23 +401,6 @@ func (t Bytes) MarshalBinary() (data []byte, err error) {
 
 func (t *Bytes) UnmarshalBinary(data []byte) error {
 	*t = Bytes{append([]byte(nil), data...)}
-	return nil
-}
-
-type bytesDTO struct {
-	Data []byte `bson:"data"`
-}
-
-func (t Bytes) MarshalBSON() ([]byte, error) {
-	return bson.Marshal(bytesDTO{Data: t.p})
-}
-
-func (t *Bytes) UnmarshalBSON(data []byte) error {
-	var p bytesDTO
-	if err := bson.Unmarshal(data, &p); err != nil {
-		return err
-	}
-	*t = Bytes{p.Data}
 	return nil
 }
 
