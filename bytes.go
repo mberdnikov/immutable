@@ -55,6 +55,14 @@ func (t Bytes) Reader() *bytes.Reader {
 	return bytes.NewReader(t.p)
 }
 
+func (t Bytes) WriteTo(w io.Writer) (int64, error) {
+	if len(t.p) == 0 {
+		return 0, nil
+	}
+	n, err := w.Write(t.p)
+	return int64(n), err
+}
+
 // Equal is equivalent to bytes.Equal
 func (t Bytes) Equal(b Bytes) bool {
 	return bytes.Equal(t.p, b.p)
