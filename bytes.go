@@ -22,6 +22,10 @@ func BytesFromString(s string) Bytes {
 	return NewBytes([]byte(s), false)
 }
 
+func (t Bytes) Get(off int) byte {
+	return t.p[off]
+}
+
 func (t Bytes) Len() int {
 	return len(t.p)
 }
@@ -47,7 +51,7 @@ func (t Bytes) Append(list ...Bytes) Bytes {
 	return Bytes{result}
 }
 
-func (t Bytes) Reader() io.Reader {
+func (t Bytes) Reader() *bytes.Reader {
 	return bytes.NewReader(t.p)
 }
 
