@@ -3,6 +3,7 @@ package immutable
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"io"
 	"unicode"
 )
@@ -34,6 +35,14 @@ func (t Bytes) Slice(from, to int) Bytes {
 	return NewBytes(t.p[from:to], false)
 }
 
+func (t Bytes) SliceFrom(from int) Bytes {
+	return NewBytes(t.p[from:], false)
+}
+
+func (t Bytes) SliceTo(to int) Bytes {
+	return NewBytes(t.p[:to], false)
+}
+
 func (t Bytes) Copy(dst []byte) int {
 	return copy(dst, t.p)
 }
@@ -55,12 +64,30 @@ func (t Bytes) Reader() *bytes.Reader {
 	return bytes.NewReader(t.p)
 }
 
+func (t Bytes) ReadAt(p []byte, off int64) (n int, err error) {
+	if off < 0 {
+		return 0, errors.New("negative offset")
+	}
+	if off >= int64(len(t.p)) {
+		return 0, io.EOF
+	}
+	n = copy(p, t.p[off:])
+	if n < len(p) {
+		err = io.EOF
+	}
+	return
+}
+
 func (t Bytes) WriteTo(w io.Writer) (int64, error) {
 	if len(t.p) == 0 {
 		return 0, nil
 	}
 	n, err := w.Write(t.p)
 	return int64(n), err
+}
+
+func (t Bytes) String() string {
+	return string(t.p)
 }
 
 // Equal is equivalent to bytes.Equal
@@ -233,9 +260,17 @@ func (t Bytes) HasPrefix(prefix Bytes) bool {
 	return bytes.HasPrefix(t.p, prefix.p)
 }
 
+func (t Bytes) IsPrefix(prefix Bytes) bool {
+	return bytes.HasPrefix(prefix.p, t.p)
+}
+
 // HasPrefixR is equivalent to bytes.HasPrefix
 func (t Bytes) HasPrefixR(prefix []byte) bool {
 	return bytes.HasPrefix(t.p, prefix)
+}
+
+func (t Bytes) IsPrefixR(prefix []byte) bool {
+	return bytes.HasPrefix(prefix, t.p)
 }
 
 // HasSuffix is equivalent to bytes.HasSuffix
@@ -243,9 +278,17 @@ func (t Bytes) HasSuffix(suffix Bytes) bool {
 	return bytes.HasSuffix(t.p, suffix.p)
 }
 
+func (t Bytes) IsSuffix(suffix Bytes) bool {
+	return bytes.HasSuffix(suffix.p, t.p)
+}
+
 // HasSuffixR is equivalent to bytes.HasSuffix
 func (t Bytes) HasSuffixR(suffix []byte) bool {
 	return bytes.HasSuffix(t.p, suffix)
+}
+
+func (t Bytes) IsSuffixR(suffix []byte) bool {
+	return bytes.HasSuffix(suffix, t.p)
 }
 
 // TrimPrefix is equivalent to bytes.TrimPrefix
